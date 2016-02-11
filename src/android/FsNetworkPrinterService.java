@@ -1,4 +1,4 @@
-package cordova-plugin-fs-network-printer-service;
+package cordova.plugin.FsNetworkPrinterService;
 
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CallbackContext;
