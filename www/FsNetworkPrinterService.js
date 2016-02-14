@@ -9,8 +9,14 @@ var exec = require('cordova/exec');
 var fsNetworkPrintersService = {
     // The JavaScript portion of a plugin always uses the cordova.exec method as follows:
     // exec(<successFunction>, <failFunction>, <service>, <action>, [<args>]);
+    initialize: function (success, error) {
+        exec(success, error, "FsNetworkPrinterService", "initialize", []);
+    },
     echo: function (message, success, error) {
         exec(success, error, "FsNetworkPrinterService", "echo", [message]);
+    },
+    getPrinters: function (success, error) {
+        exec(success, error, "FsNetworkPrinterService", "getPrinters", []);
     }
 };
 
