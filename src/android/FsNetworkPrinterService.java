@@ -8,6 +8,7 @@ import android.net.nsd.NsdManager;
 import android.net.nsd.NsdServiceInfo;
 
 import android.os.Build;
+import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 import android.view.Window;
@@ -83,7 +84,7 @@ public class FsNetworkPrinterService extends CordovaPlugin {
         }
 		
 		if ("connectToHoinPrinter".equals(action)) {
-			return this.connectToHoinPrinter(args.getString(0), CallbackContext);
+			return this.connectToHoinPrinter(args.getString(0), callbackContext);
 		}
 		
 
@@ -225,7 +226,7 @@ public class FsNetworkPrinterService extends CordovaPlugin {
 				}
 			} catch (InterruptedException e) {
 				e.printStackTrace();
-				Log.d(Tag,"Hoin printer error");
+				Log.v(TAG, "Hoin printer error");
 			}
 		}
 	}
