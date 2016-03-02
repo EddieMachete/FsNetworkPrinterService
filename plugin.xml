@@ -17,6 +17,8 @@
   <platform name="android">
     <source-file src="src/android/FsNetworkPrinterService.java"
                  target-dir="src/cordova/plugin/fsnetworkprinterservice" />
+    <source-file src="src/android/libs/hoinsdk.jar"
+                target-dir="libs" />
     <config-file parent="/*" target="res/xml/config.xml">
       <feature name="FsNetworkPrinterService">
         <param name="android-package" value="cordova.plugin.fsnetworkprinterservice.FsNetworkPrinterService" />
