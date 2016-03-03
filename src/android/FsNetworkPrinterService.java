@@ -13,6 +13,7 @@ import android.os.Message;
 import android.util.Log;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.Toast;
 
 // HOIN PRINTER
 import com.hoin.wfsdk.PrintPic;
@@ -76,7 +77,7 @@ public class FsNetworkPrinterService extends CordovaPlugin {
         }
     
         if ("echo".equals(action)) {
-            return this.echo(args.getString(0), callbackContext);
+            return this.echo(args.getString(0) + "_1", callbackContext);
         }
         
         if ("getPrinters".equals(action)) {
@@ -84,6 +85,13 @@ public class FsNetworkPrinterService extends CordovaPlugin {
         }
 		
 		if ("connectToHoinPrinter".equals(action)) {
+            Log.v(TAG, "initialization");
+            cordova.getActivity().runOnUiThread(new Runnable() {
+                public void run() {
+                    Toast.makeText(cordova.getActivity().getApplicationContext(), "Hello", Toast.LENGTH_SHORT).show();
+                }
+            });
+            
 			return this.connectToHoinPrinter(args.getString(0), callbackContext);
 		}
 		
@@ -168,6 +176,7 @@ public class FsNetworkPrinterService extends CordovaPlugin {
 		//NetworkInfo info = sockMan.getActiveNetworkInfo();
         sendUpdate("connecting_to_printer");
 		getHoinWifi().initSocket(printerIp, 9100);
+        _hoinMessageThread.start();
 		//Log.v(TAG, "Connecting to Hoin printer at " + printerIp);
 		//PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, "Connecting to Hoin printer at " + printerIp);
 		//pluginResult.setKeepCallback(true);
@@ -196,30 +205,21 @@ public class FsNetworkPrinterService extends CordovaPlugin {
 			//webView.postMessage("networkconnection", type);
 			return;
 		}
-		
         
+		// Only report status if the status actually changed
+		//if (_lastStatus.equals(status)) {
+		//	return;
+		//}
+		
         try {
             JSONObject parameters = new JSONObject();
             parameters.put("status", status);
             PluginResult result = new PluginResult(PluginResult.Status.OK, parameters);
             result.setKeepCallback(true);
             _connectionCallbackContext.sendPluginResult(result);
-
         } catch (JSONException e) {
             Log.e(TAG, e.toString());
         }
-        
-        
-        return;
-		// Only report status if the status actually changed
-		if (_lastStatus.equals(status)) {
-			return;
-		}
-		
-		PluginResult result = new PluginResult(PluginResult.Status.OK, status);
-		result.setKeepCallback(true);
-		_connectionCallbackContext.sendPluginResult(result);
-		_lastStatus = status;
 	}
 	
 	private class HoinMessageThread extends Thread {	
