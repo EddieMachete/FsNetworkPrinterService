@@ -84,15 +84,6 @@ public class FsNetworkPrinterService extends CordovaPlugin {
         }
 		
 		if ("connectToHoinPrinter".equals(action)) {
-            PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, "abc");
-            pluginResult.setKeepCallback(true);
-            callbackContext.sendPluginResult(pluginResult);
-            
-            
-            PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, "abc");
-            pluginResult.setKeepCallback(true);
-            callbackContext.sendPluginResult(pluginResult);
-        
 			return this.connectToHoinPrinter(args.getString(0), callbackContext);
 		}
 		
@@ -175,11 +166,13 @@ public class FsNetworkPrinterService extends CordovaPlugin {
 		_hoinConnectionFlag = 1;
 		_connectionCallbackContext = callbackContext;
 		//NetworkInfo info = sockMan.getActiveNetworkInfo();
+        sendUpdate("connecting_to_printer");
 		getHoinWifi().initSocket(printerIp, 9100);
-		Log.v(TAG, "Connecting to Hoin printer at " + printerIp);
-		PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, "Connecting to Hoin printer at " + printerIp);
-		pluginResult.setKeepCallback(true);
-		callbackContext.sendPluginResult(pluginResult);
+		//Log.v(TAG, "Connecting to Hoin printer at " + printerIp);
+		//PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, "Connecting to Hoin printer at " + printerIp);
+		//pluginResult.setKeepCallback(true);
+		//callbackContext.sendPluginResult(pluginResult);
+        sendUpdate("connecting_to_printer_2");
 		
 		return true;
 	}
@@ -204,6 +197,20 @@ public class FsNetworkPrinterService extends CordovaPlugin {
 			return;
 		}
 		
+        
+        try {
+            JSONObject parameters = new JSONObject();
+            parameters.put("status", status);
+            PluginResult result = new PluginResult(PluginResult.Status.OK, parameters);
+            result.setKeepCallback(true);
+            _connectionCallbackContext.sendPluginResult(result);
+
+        } catch (JSONException e) {
+            Log.e(TAG, e.toString());
+        }
+        
+        
+        return;
 		// Only report status if the status actually changed
 		if (_lastStatus.equals(status)) {
 			return;
