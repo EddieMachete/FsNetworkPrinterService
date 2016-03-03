@@ -87,6 +87,11 @@ public class FsNetworkPrinterService extends CordovaPlugin {
             PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, "abc");
             pluginResult.setKeepCallback(true);
             callbackContext.sendPluginResult(pluginResult);
+            
+            
+            PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, "abc");
+            pluginResult.setKeepCallback(true);
+            callbackContext.sendPluginResult(pluginResult);
         
 			return this.connectToHoinPrinter(args.getString(0), callbackContext);
 		}
