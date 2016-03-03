@@ -31,6 +31,7 @@ import org.json.JSONObject;
 
 public class FsNetworkPrinterService extends CordovaPlugin {
     private static final String TAG = "FsNetworkPrinterService";
+    private static String _toastMessage = "Hello";
     private NsdManager.DiscoveryListener _discoveryListener;
     private String _status = "not initialized";
     private String _devices = "";
@@ -77,7 +78,7 @@ public class FsNetworkPrinterService extends CordovaPlugin {
         }
     
         if ("echo".equals(action)) {
-            return this.echo(args.getString(0) + "_1", callbackContext);
+            return this.echo(args.getString(0), callbackContext);
         }
         
         if ("getPrinters".equals(action)) {
@@ -85,13 +86,6 @@ public class FsNetworkPrinterService extends CordovaPlugin {
         }
 		
 		if ("connectToHoinPrinter".equals(action)) {
-            Log.v(TAG, "initialization");
-            cordova.getActivity().runOnUiThread(new Runnable() {
-                public void run() {
-                    Toast.makeText(cordova.getActivity().getApplicationContext(), "Hello", Toast.LENGTH_SHORT).show();
-                }
-            });
-            
 			return this.connectToHoinPrinter(args.getString(0), callbackContext);
 		}
 		
@@ -115,34 +109,6 @@ public class FsNetworkPrinterService extends CordovaPlugin {
 		
 		closeHoinPrinterSocket();
 	}
-
-/*public class WifiReceiver extends BroadcastReceiver {
-    @Override
-    public void onReceive(Context context, Intent intent) {
-        final String action = intent.getAction();
-        if (action.equals(WifiManager.SUPPLICANT_CONNECTION_CHANGE_ACTION)) {
-            PluginResult result;
-            if (intent.getBooleanExtra(
-                    WifiManager.EXTRA_SUPPLICANT_CONNECTED, false)) {
-                Toast.makeText(cordova.getActivity(), "Wifi Connected",
-                        Toast.LENGTH_SHORT).show();
-                result = new PluginResult(PluginResult.Status.OK,
-                        "Wifi Connected");
-            } else {
-                Toast.makeText(cordova.getActivity(), "Wifi Disconnected",
-                        Toast.LENGTH_SHORT).show();
-                result = new PluginResult(PluginResult.Status.ERROR,
-                        "Wifi Disconnected");
-            }
-
-            result.setKeepCallback(false);
-            if (callbackContext != null) {
-                callbackContext.sendPluginResult(result);
-                callbackContext = null;
-            }
-        }
-    }
-}*/
     
     private boolean echo(final String message, final CallbackContext callbackContext) {
         if (message != null && message.length() > 0) { 
@@ -153,6 +119,39 @@ public class FsNetworkPrinterService extends CordovaPlugin {
 		
 		return true;
     }
+    
+    private void toast(String message) {
+        _toastMessage = message;
+        
+        cordova.getActivity().runOnUiThread(new Runnable() {
+            public void run() {
+                Toast.makeText(cordova.getActivity().getApplicationContext(), _toastMessage, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+	
+	private void sendUpdate(String status) {
+        toast(status);
+        
+		if (_connectionCallbackContext == null) {
+			return;
+		}
+        
+		// Only report status if the status actually changed
+		if (_lastStatus.equals(status)) {
+			return;
+		}
+		
+        try {
+            JSONObject parameters = new JSONObject();
+            parameters.put("status", status);
+            PluginResult result = new PluginResult(PluginResult.Status.OK, parameters);
+            result.setKeepCallback(true);
+            _connectionCallbackContext.sendPluginResult(result);
+        } catch (JSONException e) {
+            Log.e(TAG, e.toString());
+        }
+	}
 	
 	// ----- HOIN METHODS ----------------------------------
 	
@@ -165,31 +164,6 @@ public class FsNetworkPrinterService extends CordovaPlugin {
 		return _hoinWifi;
 	}
 	
-	private boolean connectToHoinPrinter(final String printerIp, final CallbackContext callbackContext) {
-		if (_hoinConnectionFlag != 0) {
-			callbackContext.error("The system is currently processing a print request.");
-			return false;
-		}
-		
-		_hoinConnectionFlag = 1;
-		_connectionCallbackContext = callbackContext;
-		//NetworkInfo info = sockMan.getActiveNetworkInfo();
-        sendUpdate("connecting_to_printer");
-		getHoinWifi().initSocket(printerIp, 9100);
-        _hoinMessageThread.start();
-		//Log.v(TAG, "Connecting to Hoin printer at " + printerIp);
-		//PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, "Connecting to Hoin printer at " + printerIp);
-		//pluginResult.setKeepCallback(true);
-		//callbackContext.sendPluginResult(pluginResult);
-        sendUpdate("connecting_to_printer_2");
-		
-		return true;
-	}
-	
-	private boolean disconnectFromHoinPrinter(final CallbackContext callbackContext) {
-		return true;
-	}
-	
 	private void closeHoinPrinterSocket() {
 		if (_hoinWifi == null)
 			return;
@@ -200,26 +174,55 @@ public class FsNetworkPrinterService extends CordovaPlugin {
 		_hoinMessageThread = null;
 	}
 	
-	private void sendUpdate(String status) {
-		if (_connectionCallbackContext == null) {
-			//webView.postMessage("networkconnection", type);
-			return;
+	private boolean connectToHoinPrinter(final String printerIp, final CallbackContext callbackContext) {
+		if (_hoinConnectionFlag != 0) {
+			callbackContext.error("The system is currently processing a print request.");
+			return false;
 		}
         
-		// Only report status if the status actually changed
-		//if (_lastStatus.equals(status)) {
-		//	return;
-		//}
+		_hoinConnectionFlag = 1;
+		_connectionCallbackContext = callbackContext;
+		getHoinWifi().initSocket(printerIp, 9100);
+        _hoinMessageThread.start();
 		
-        try {
-            JSONObject parameters = new JSONObject();
-            parameters.put("status", status);
-            PluginResult result = new PluginResult(PluginResult.Status.OK, parameters);
-            result.setKeepCallback(true);
-            _connectionCallbackContext.sendPluginResult(result);
-        } catch (JSONException e) {
-            Log.e(TAG, e.toString());
+		return true;
+	}
+    
+    private boolean hoinPrint(final String text, final CallbackContext callbackContext) {
+        if (_hoinConnectionFlag != 2) {
+            callbackContext.error("The HOIN printer is not connected.");
+            return false;
         }
+        
+        String msg = "";
+        byte[] tcmd = null;
+        WifiCommunication hoinWifi = getHoinWifi();
+        
+        //byte[] cmd = new byte[3];
+        //cmd[0] = 0x1b;
+        //cmd[1] = 0x21;
+        //cmd[2] |= 0x10; // Dougle height
+        //hoinWifi.sndByte(cmd);          //set double height and double width mode
+        hoinWifi.sendMsg(text, "GBK");
+        //cmd[2] &= 0xEF;
+        //wfComm.sndByte(cmd);          //cancel double height and double width mode
+        
+        //try {
+        //    Thread.sleep(50);                   //ÿ��һ����ʱ5����
+        //} catch (InterruptedException e) {
+        //    e.printStackTrace();
+        //}
+        
+        //msg = "  You have sucessfully created communications between your device and our WIFI printer.\n\n"
+        //        +"  Our company is a high-tech enterprise which specializes" +
+        //        " in R&D,manufacturing,marketing of thermal printers and barcode scanners.\n\n";
+        //wfComm.sendMsg(msg, "GBK");
+        
+        return true;
+    }
+	
+	private boolean disconnectFromHoinPrinter(final CallbackContext callbackContext) {
+		return true;
 	}
 	
 	private class HoinMessageThread extends Thread {	
@@ -255,14 +258,10 @@ public class FsNetworkPrinterService extends CordovaPlugin {
 				case WifiCommunication.WFPRINTER_CONNECTED:
 					//connFlag = 0;
 					sendUpdate("hoin_printer_connected");
-					//Toast.makeText(getActivity(), "Connect the WIFI-printer successful", Toast.LENGTH_SHORT).show();
-					
-					//_hoinMessageThread = new HoinMessageThread();
-					//_hoinMessageThread.start();
 					break;
 				case WifiCommunication.WFPRINTER_DISCONNECTED:
 					sendUpdate("hoin_printer_disconnected");
-					//_hoinMessageThread.interrupt();
+					_hoinMessageThread.interrupt();
 					break;
 				case WifiCommunication.SEND_FAILED:
 					sendUpdate("hoin_printer_send_failed");
@@ -325,8 +324,6 @@ public class FsNetworkPrinterService extends CordovaPlugin {
 	// I'm keeping this code in case we need to move to a different printer.
     private void initializeDiscoveryListener()
     {
-        Log.v(TAG, "+++++ Initializing");
-        
         // Instantiate a new DiscoveryListener
         _discoveryListener = new NsdManager.DiscoveryListener() {
             

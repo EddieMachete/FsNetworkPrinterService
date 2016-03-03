@@ -19,7 +19,10 @@ var fsNetworkPrinterService = {
         exec(success, error, "FsNetworkPrinterService", "getPrinters", []);
     },
     connectToHoinPrinter: function (printerIp, success, error) {
-        exec(success, error, "FsNetworkPrinterService", "getPrinters", [printerIp]);
+        exec(success, error, "FsNetworkPrinterService", "connectToHoinPrinter", [printerIp]);
+    },
+    hoinPrint: function (success, error) {
+        exec(success, error, "FsNetworkPrinterService", "hoinPrint", []);
     }
 };
 
