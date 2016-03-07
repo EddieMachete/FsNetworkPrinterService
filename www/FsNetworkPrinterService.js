@@ -1,29 +1,59 @@
-var exec = require('cordova/exec');
-
-//exports.coolMethod = function (arg0, success, error) {
-//    exec(success, error, "FsNetworkPrinterService", "getNetworkPrinters", [arg0]);
-//    exec(success, error, "FsNetworkPrinterService", "echo", [arg0]);
-//    //exec(success, error, "FsNetworkPrinterService", "getNetworkPrinters");
-//};
-
-var fsNetworkPrinterService = {
-    // The JavaScript portion of a plugin always uses the cordova.exec method as follows:
-    // exec(<successFunction>, <failFunction>, <service>, <action>, [<args>]);
-    initialize: function (success, error) {
-        exec(success, error, "FsNetworkPrinterService", "initialize", []);
-    },
-    echo: function (message, success, error) {
-        exec(success, error, "FsNetworkPrinterService", "echo", [message]);
-    },
-    getPrinters: function (success, error) {
-        exec(success, error, "FsNetworkPrinterService", "getPrinters", []);
-    },
-    connectToHoinPrinter: function (printerIp, success, error) {
-        exec(success, error, "FsNetworkPrinterService", "connectToHoinPrinter", [printerIp]);
-    },
-    hoinPrint: function (header, document, success, error) {
-        exec(success, error, "FsNetworkPrinterService", "hoinPrint", [header, document]);
+(function () {
+    'use strict';
+    
+    if (!require) {
+        console.log('FsNetworkPrinterService :: cordova/require is not available');
+        return;
     }
-};
 
-module.exports = fsNetworkPrinterService;
+    // -- PRIVATE VARIABLES ----------
+    var _exec = require('cordova/exec');
+    var _status = {
+        isConnected: false
+    };
+
+    // -- PRIVATE METHODS ----------
+    function initialize(success, error) {
+        _exec(success, error, "FsNetworkPrinterService", "initialize", []);
+    }
+    
+    function echo(message, success, error) {
+            _exec(success, error, "FsNetworkPrinterService", "echo", [message]);
+        }
+        
+    function getPrinters(success, error) {
+        _exec(success, error, "FsNetworkPrinterService", "getPrinters", []);
+    }
+    
+    function connectToHoinPrinter(printerIp, success, error) {
+        _exec(
+            function (data) {
+                _status.isConnected = data.status === 'hoin_printer_connected';
+                
+                if (success && typeof success === 'function')
+                    success(data);
+            },
+            error,
+            "FsNetworkPrinterService", "connectToHoinPrinter", [printerIp]);
+    }
+
+    function hoinPrint(header, document, success, error) {
+        _exec(success, error, "FsNetworkPrinterService", "hoinPrint", [header, document]);
+    }
+    
+    function getHoinPrinterStatus() {
+        return _status;
+    }
+
+    // -- BEGIN CORDOVA PLUGIN REGISTRATION ---------
+    var fsNetworkPrinterService = {
+        initialize: initialize,
+        echo: echo,
+        getPrinters: getPrinters,
+        connectToHoinPrinter: connectToHoinPrinter,
+        hoinPrint: hoinPrint
+    };
+    
+    module.exports = fsNetworkPrinterService;
+    // -- END OF CORDOVA PLUGIN REGISTRATION ---------------
+})();
