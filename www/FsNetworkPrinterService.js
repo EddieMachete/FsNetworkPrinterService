@@ -51,7 +51,8 @@
         echo: echo,
         getPrinters: getPrinters,
         connectToHoinPrinter: connectToHoinPrinter,
-        hoinPrint: hoinPrint
+        hoinPrint: hoinPrint,
+        getHoinPrinterStatus: getHoinPrinterStatus
     };
     
     module.exports = fsNetworkPrinterService;
