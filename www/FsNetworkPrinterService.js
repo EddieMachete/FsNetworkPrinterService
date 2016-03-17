@@ -9,7 +9,8 @@
     // -- PRIVATE VARIABLES ----------
     var _exec = require('cordova/exec');
     var _status = {
-        isConnected: false
+        isConnected: false,
+        printerIp: '192.168.0.123'
     };
 
     // -- PRIVATE METHODS ----------
@@ -26,6 +27,8 @@
     }
     
     function connectToHoinPrinter(printerIp, success, error) {
+        _status.printerIp = printerIp;
+        
         _exec(
             function (data) {
                 _status.isConnected = data.status === 'hoin_printer_connected';
@@ -33,7 +36,12 @@
                 if (success && typeof success === 'function')
                     success(data);
             },
-            error,
+            function (e) {
+                _status.isConnected = false;
+                
+                if (error && typeof error === 'function')
+                    error(e);
+            },
             "FsNetworkPrinterService", "connectToHoinPrinter", [printerIp]);
     }
 

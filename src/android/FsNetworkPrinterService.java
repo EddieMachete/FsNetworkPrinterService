@@ -162,6 +162,7 @@ public class FsNetworkPrinterService extends CordovaPlugin {
 	private WifiCommunication getHoinWifi() {
 		if (_hoinWifi == null) {
 			_hoinMessageThread = new HoinMessageThread();
+            _hoinMessageThread.start();
 			_hoinWifi = new WifiCommunication(_hoinWifiHandler);
 		}
 		
@@ -187,7 +188,6 @@ public class FsNetworkPrinterService extends CordovaPlugin {
 		_hoinConnectionFlag = 1;
 		_connectionCallbackContext = callbackContext;
 		getHoinWifi().initSocket(printerIp, 9100);
-        _hoinMessageThread.start();
 		
 		return true;
 	}
@@ -260,8 +260,8 @@ public class FsNetworkPrinterService extends CordovaPlugin {
 					sendUpdate("hoin_printer_connected");
 					break;
 				case WifiCommunication.WFPRINTER_DISCONNECTED:
+					_hoinConnectionFlag = 0;
 					sendUpdate("hoin_printer_disconnected");
-					_hoinMessageThread.interrupt();
 					break;
 				case WifiCommunication.SEND_FAILED:
 					sendUpdate("hoin_printer_send_failed");
@@ -272,6 +272,7 @@ public class FsNetworkPrinterService extends CordovaPlugin {
 					break;
 				case WifiCommunication.WFPRINTER_CONNECTEDERR:
 					sendUpdate("hoin_printer_connected_err");
+					_hoinConnectionFlag = 0;
 					//connFlag = 0;
 					//Toast.makeText(getActivity(), "Connect the WIFI-printer error",
 					//		Toast.LENGTH_SHORT).show();
